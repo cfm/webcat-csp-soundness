@@ -78,9 +78,8 @@ class EffectivePolicy(Policy):
     def script_src(self):
         return If(self._script_src == BOT, self.default_src, self._script_src)
 
-    def executes(self, c):
+    def executes(self, obj):
         return Or(
-            self.object_src == TOP,
-            self.script_src == WASM_UNSAFE_EVAL,
-            self.script_src == TOP,
+            self.object_src == obj,
+            self.script_src == obj,
         )

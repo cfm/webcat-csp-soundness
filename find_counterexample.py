@@ -12,7 +12,7 @@ CLI utility to find counterexamples for---
 import argparse
 from z3 import Const, Solver, sat
 
-from policy import Policy, EffectivePolicy, SerializedSourceList
+from policy import Policy, EffectivePolicy, SerializedSourceList, TOP
 
 default_src = Const("default-src", SerializedSourceList)
 object_src = Const("object-src", SerializedSourceList)
@@ -31,8 +31,8 @@ def main() -> int:
     solver = Solver()
 
     p = Policy(default_src, object_src, script_src).valid()
-    c = None  # TODO
-    ep = EffectivePolicy(default_src, object_src, script_src).executes(c)
+    obj = TOP  # since other values in the `SerializedSourceList` lattice are explicitly allowed
+    ep = EffectivePolicy(default_src, object_src, script_src).executes(obj)
     solver.add(p)
     solver.add(ep)
     if args.show_query:
