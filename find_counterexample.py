@@ -17,7 +17,7 @@ def main() -> int:
     args = parser.parse_args()
 
     accept_p = Bool("accept(P)")
-    executes_p_c = Bool("executes(P,c)")
+    executes_p_c = Bool("executes(P, c)")
 
     implication = Implies(accept_p, Not(executes_p_c))
     counterexample_query = Not(implication)
@@ -33,7 +33,7 @@ def main() -> int:
         model = solver.model()
         print("Counterexample found:")
         print(f"  accept(P) = {model.eval(accept_p, model_completion=True)}")
-        print(f"  executes(P,c) = {model.eval(executes_p_c, model_completion=True)}")
+        print(f"  executes(P, c) = {model.eval(executes_p_c, model_completion=True)}")
         return 0
 
     print("No counterexample found.")
