@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
-"""CLI utility to find counterexamples for accept(P) ⇒ ¬executes(P, c)."""
+"""
+CLI utility to find counterexamples for---
+
+    Policy.accepted(p) ⇒ ¬EffectivePolicy.executes(p, c)
+
+---aka instances of:
+
+    Policy.accepted(p) ∧ EffectivePolicy.executes(p, c)
+"""
 
 import argparse
-from z3 import Bool, Implies, Not, Solver, sat
+from z3 import Const, Solver, sat
 
+from policy import Policy, EffectivePolicy, SerializedSourceList
+
+default_src = Const("default-src", SerializedSourceList)
+object_src = Const("object-src", SerializedSourceList)
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -15,29 +27,26 @@ def main() -> int:
         help="Print the Z3 query before solving.",
     )
     args = parser.parse_args()
-
-    accept_p = Bool("accept(P)")
-    executes_p_c = Bool("executes(P, c)")
-
-    implication = Implies(accept_p, Not(executes_p_c))
-    counterexample_query = Not(implication)
-
-    if args.show_query:
-        print(f"Query: {counterexample_query}")
-
     solver = Solver()
-    solver.add(counterexample_query)
+
+    p = Policy(default_src, object_src).valid()
+    c = None  # TODO
+    ep = EffectivePolicy(default_src, object_src).executes(c)
+    solver.add(p)
+    solver.add(ep)
+    if args.show_query:
+        print(p)
+        print(ep)
 
     result = solver.check()
     if result == sat:
         model = solver.model()
-        print("Counterexample found:")
-        print(f"  accept(P) = {model.eval(accept_p, model_completion=True)}")
-        print(f"  executes(P, c) = {model.eval(executes_p_c, model_completion=True)}")
-        return 0
+        print("Violating policy found:")
+        print(model[default_src], model[object_src])
+        return 1
 
-    print("No counterexample found.")
-    return 1
+    print("No violating policies found.")
+    return 0
 
 
 if __name__ == "__main__":
