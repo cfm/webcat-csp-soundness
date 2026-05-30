@@ -16,6 +16,7 @@ from policy import Policy, EffectivePolicy, SerializedSourceList
 
 default_src = Const("default-src", SerializedSourceList)
 object_src = Const("object-src", SerializedSourceList)
+script_src = Const("script-src", SerializedSourceList)
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -29,9 +30,9 @@ def main() -> int:
     args = parser.parse_args()
     solver = Solver()
 
-    p = Policy(default_src, object_src).valid()
+    p = Policy(default_src, object_src, script_src).valid()
     c = None  # TODO
-    ep = EffectivePolicy(default_src, object_src).executes(c)
+    ep = EffectivePolicy(default_src, object_src, script_src).executes(c)
     solver.add(p)
     solver.add(ep)
     if args.show_query:
@@ -42,7 +43,7 @@ def main() -> int:
     if result == sat:
         model = solver.model()
         print("Violating policy found:")
-        print(model[default_src], model[object_src])
+        print(model)
         return 1
 
     print("No violating policies found.")
