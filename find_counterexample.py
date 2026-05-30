@@ -2,11 +2,11 @@
 """
 CLI utility to find counterexamples for---
 
-    Policy.accepted(p) ⇒ ¬EffectivePolicy.executes(p, c)
+    Policy.valid() ⇒ ¬EffectivePolicy.executes(obj)
 
----aka instances of:
+---aka examples of:
 
-    Policy.accepted(p) ∧ EffectivePolicy.executes(p, c)
+    Policy.valid() ∧ EffectivePolicy.executes(obj)
 """
 
 import argparse
@@ -20,7 +20,7 @@ script_src = Const("script-src", SerializedSourceList)
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Find a counterexample of accept(P) ⇒ ¬executes(P, c)."
+        description="Find CSPs valid under WEBCAT that allow unsafe code execution."
     )
     parser.add_argument(
         "--show-query",
@@ -36,17 +36,17 @@ def main() -> int:
     solver.add(p)
     solver.add(ep)
     if args.show_query:
-        print(p)
-        print(ep)
+        print(f"--> Policy.valid(): {p}")
+        print(f"--> EffectivePolicy.executes({obj}): {ep}")
 
     result = solver.check()
     if result == sat:
         model = solver.model()
-        print("Violating policy found:")
+        print(f"<-- Violating policy found for {obj}:")
         print(model)
         return 1
 
-    print("No violating policies found.")
+    print("<-- No violating policies found.")
     return 0
 
 
