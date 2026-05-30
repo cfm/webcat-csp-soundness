@@ -10,9 +10,9 @@ CLI utility to find counterexamples for---
 """
 
 import argparse
-from z3 import Const, Solver, sat
+from z3 import Const, Or, Solver, sat
 
-from policy import Policy, EffectivePolicy, SerializedSourceList, TOP
+from policy import Policy, EffectivePolicy, SerializedSourceList, TOP, WASM_UNSAFE_EVAL
 
 default_src = Const("default-src", SerializedSourceList)
 object_src = Const("object-src", SerializedSourceList)
@@ -31,10 +31,15 @@ def main() -> int:
     solver = Solver()
 
     p = Policy(default_src, object_src, script_src).valid()
-    obj = TOP  # since other values in the `SerializedSourceList` lattice are explicitly allowed
-    ep = EffectivePolicy(default_src, object_src, script_src).executes(obj)
     solver.add(p)
+
+    obj = Const("obj", SerializedSourceList)
+    # FIXME: clarify how to represent safe versus unsafe executions
+    solver.add(Or(obj == TOP, obj == WASM_UNSAFE_EVAL))
+
+    ep = EffectivePolicy(default_src, object_src, script_src).executes(obj)
     solver.add(ep)
+
     if args.show_query:
         print(f"--> Policy.valid(): {p}")
         print(f"--> EffectivePolicy.executes({obj}): {ep}")
@@ -42,7 +47,7 @@ def main() -> int:
     result = solver.check()
     if result == sat:
         model = solver.model()
-        print(f"<-- Violating policy found for {obj}:")
+        print("<-- Violating policy found:")
         print(model)
         return 1
 
