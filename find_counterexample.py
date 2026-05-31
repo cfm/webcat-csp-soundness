@@ -10,7 +10,7 @@ CLI utility to find counterexamples for---
 """
 
 import argparse
-from z3 import Const, Or, Solver, sat
+from z3 import Const, Or, Solver, sat, unsat
 
 from policy import Policy, EffectivePolicy, SerializedSourceList, TOP, WASM_UNSAFE_EVAL
 
@@ -41,14 +41,19 @@ def main() -> int:
         print(f"--> Query: {solver}")
 
     result = solver.check()
-    if result == sat:
+    if result == unsat:
+        print("<-- No violating policies found.")
+        return 0  # Unsat is our goal: Policy.valid() is sound!
+
+    elif result == sat:
         model = solver.model()
         print("<-- Violating policy found:")
         print(model)
         return 1
 
-    print("<-- No violating policies found.")
-    return 0
+    else:
+        print("<-- Query timed out.")
+        return 1
 
 
 if __name__ == "__main__":
