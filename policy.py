@@ -35,7 +35,11 @@ class Policy:
     @property
     def default_src_valid(self):
         # https://docs.webcat.tech/developers/CSP.html#default-src
-        return Or(self.default_src == SELF, self.default_src == NONE)
+        return Or(
+            self.default_src == BOT,  # absent
+            self.default_src == SELF,
+            self.default_src == NONE,
+        )
 
     @property
     def object_src(self) -> ExprRef:
@@ -46,7 +50,10 @@ class Policy:
         # https://docs.webcat.tech/developers/CSP.html#object-src
         return Or(
             self.object_src == NONE,
-            And(self.object_src == BOT, self.default_src == NONE),
+            And(
+                self.object_src == BOT,  # absent
+                self.default_src == NONE,
+            ),
         )
 
     @property
@@ -57,8 +64,9 @@ class Policy:
     def script_src_valid(self):
         # https://docs.webcat.tech/developers/CSP.html#script-src-script-src-elem
         return Or(
-            self.script_src == SELF,
+            self.script_src == BOT,  # absent
             self.script_src == NONE,
+            self.script_src == SELF,
             self.script_src == WASM_UNSAFE_EVAL,
         )
 
