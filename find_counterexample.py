@@ -14,9 +14,6 @@ from z3 import Const, Or, Solver, sat
 
 from policy import Policy, EffectivePolicy, SerializedSourceList, TOP, WASM_UNSAFE_EVAL
 
-default_src = Const("default-src", SerializedSourceList)
-object_src = Const("object-src", SerializedSourceList)
-script_src = Const("script-src", SerializedSourceList)
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -30,14 +27,14 @@ def main() -> int:
     args = parser.parse_args()
     solver = Solver()
 
-    p = Policy(default_src, object_src, script_src).valid()
+    p = Policy().valid()
     solver.add(p)
 
     obj = Const("obj", SerializedSourceList)
     # FIXME: clarify how to represent safe versus unsafe executions
     solver.add(Or(obj == TOP, obj == WASM_UNSAFE_EVAL))
 
-    ep = EffectivePolicy(default_src, object_src, script_src).executes(obj)
+    ep = EffectivePolicy().executes(obj)
     solver.add(ep)
 
     if args.show_query:
