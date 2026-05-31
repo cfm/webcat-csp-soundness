@@ -87,7 +87,7 @@ class EffectivePolicy(Policy):
             ExprRef, If(self._script_src == BOT, self.default_src, self._script_src)
         )
 
-    def executes(self, obj):
+    def allows(self, obj):
         return Or(
             self.object_src == obj,
             self.script_src == obj,

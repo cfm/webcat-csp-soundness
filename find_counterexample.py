@@ -2,11 +2,11 @@
 """
 CLI utility to find counterexamples for---
 
-    Policy.valid() ⇒ ¬EffectivePolicy.executes(obj)
+    Policy.valid() ⇒ ¬EffectivePolicy.allows(obj)
 
 ---aka examples of:
 
-    Policy.valid() ∧ EffectivePolicy.executes(obj)
+    Policy.valid() ∧ EffectivePolicy.allows(obj)
 """
 
 import argparse
@@ -34,12 +34,11 @@ def main() -> int:
     # FIXME: clarify how to represent safe versus unsafe executions
     solver.add(Or(obj == TOP, obj == WASM_UNSAFE_EVAL))
 
-    ep = EffectivePolicy().executes(obj)
+    ep = EffectivePolicy().allows(obj)
     solver.add(ep)
 
     if args.show_query:
-        print(f"--> Policy.valid(): {p}")
-        print(f"--> EffectivePolicy.executes({obj}): {ep}")
+        print(f"--> Query: {solver}")
 
     result = solver.check()
     if result == sat:
