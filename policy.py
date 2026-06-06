@@ -92,62 +92,56 @@ def is_none(directive: ExprRef) -> ExprRef:
     )
 
 
-def resolve(directive: ExprRef, fallback: ExprRef) -> ExprRef:
-    return cast(
-        ExprRef,
-        If(
-            Directive.is_absent(directive),  # pyright: ignore[reportAttributeAccessIssue]
-            fallback,
-            normalize(Directive.sources(directive)),  # pyright: ignore[reportAttributeAccessIssue]
-        ),
-    )
-
-
-def resolve_chain(*directives: ExprRef, fallback: ExprRef) -> ExprRef:
+def resolve(*directives: ExprRef, fallback: ExprRef) -> ExprRef:
     effective = fallback
     for directive in reversed(directives):
-        effective = resolve(directive, effective)
+        effective = cast(
+            ExprRef,
+            If(
+                Directive.is_absent(directive),  # pyright: ignore[reportAttributeAccessIssue]
+                effective,
+                normalize(Directive.sources(directive)),  # pyright: ignore[reportAttributeAccessIssue]
+            ),
+        )
     return effective
 
 
 class Browser:
     @property
     def default_src(self) -> ExprRef:
-        return resolve(default_src, only(TOP, Source))
+        return resolve(default_src, fallback=only(TOP, Source))
 
     @property
     def script_src(self) -> ExprRef:
-        return resolve(script_src, self.default_src)
+        return resolve(script_src, fallback=self.default_src)
 
     @property
     def script_src_elem(self) -> ExprRef:
-        return resolve(script_src_elem, self.script_src)
+        return resolve(script_src_elem, fallback=self.script_src)
 
     @property
     def style_src(self) -> ExprRef:
-        return resolve(style_src, self.default_src)
+        return resolve(style_src, fallback=self.default_src)
 
     @property
     def style_src_elem(self) -> ExprRef:
-        return resolve(style_src_elem, self.style_src)
+        return resolve(style_src_elem, fallback=self.style_src)
 
     @property
     def object_src(self) -> ExprRef:
-        return resolve(object_src, self.default_src)
+        return resolve(object_src, fallback=self.default_src)
 
     @property
     def frame_src(self) -> ExprRef:
-        return resolve(frame_src, self.child_src)
+        return resolve(frame_src, fallback=self.child_src)
 
     @property
     def child_src(self) -> ExprRef:
-        return resolve(child_src, self.default_src)
+        return resolve(child_src, fallback=self.default_src)
 
     @property
     def worker_src(self) -> ExprRef:
-        return resolve_chain(
-            worker_src, child_src, script_src, fallback=self.default_src
-        )
+        return resolve(worker_src, child_src, script_src, fallback=self.default_src)
 
     def allows_unsafe(self) -> ExprRef:
         return cast(
