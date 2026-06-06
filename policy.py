@@ -5,6 +5,7 @@ from z3 import (
     ArrayRef,
     Const,
     DatatypeSortRef,
+    Implies,
     ExprRef,
     Or,
     EmptySet,
@@ -47,6 +48,12 @@ class Policy:
     # FIXME: `'self' 'wasm-unsafe-eval`'
     _script_src = script_src
 
+    def well_formed(self, directive):
+        """⊥ CAN NOT coexist with any other values."""
+        return Implies(
+            IsMember(BOT, directive), directive == only(BOT, SerializedSource)
+        )
+
     @property
     def default_src(self) -> ExprRef:
         return self._default_src
@@ -55,7 +62,7 @@ class Policy:
     def default_src_valid(self):
         # https://docs.webcat.tech/developers/CSP.html#default-src
         return Or(
-            IsMember(BOT, self.default_src),  # absent; FIXME: exclusive
+            IsMember(BOT, self.default_src),  # absent
             IsMember(SELF, self.default_src),
             IsMember(NONE, self.default_src),
         )
@@ -70,7 +77,7 @@ class Policy:
         return Or(
             IsMember(NONE, self.object_src),
             And(
-                IsMember(BOT, self.object_src),  # absent; FIXME: exclusive
+                IsMember(BOT, self.object_src),  # absent
                 IsMember(NONE, self.default_src),
             ),
         )
@@ -83,7 +90,7 @@ class Policy:
     def script_src_valid(self):
         # https://docs.webcat.tech/developers/CSP.html#script-src-script-src-elem
         return Or(
-            IsMember(BOT, self.script_src),  # absent; FIXME: exclusive
+            IsMember(BOT, self.script_src),  # absent
             IsMember(NONE, self.script_src),
             IsMember(SELF, self.script_src),
             IsMember(WASM_UNSAFE_EVAL, self.script_src),
@@ -91,8 +98,11 @@ class Policy:
 
     def valid(self):
         return And(
+            self.well_formed(self.default_src),
             self.default_src_valid,
+            self.well_formed(self.object_src),
             self.object_src_valid,
+            self.well_formed(self.script_src),
             self.script_src_valid,
         )
 
