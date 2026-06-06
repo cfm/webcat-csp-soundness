@@ -103,6 +103,13 @@ def resolve(directive: ExprRef, fallback: ExprRef) -> ExprRef:
     )
 
 
+def resolve_chain(*directives: ExprRef, fallback: ExprRef) -> ExprRef:
+    effective = fallback
+    for directive in reversed(directives):
+        effective = resolve(directive, effective)
+    return effective
+
+
 class Browser:
     @property
     def default_src(self) -> ExprRef:
@@ -114,7 +121,7 @@ class Browser:
 
     @property
     def script_src_elem(self) -> ExprRef:
-        return resolve(script_src_elem, self.default_src)
+        return resolve(script_src_elem, self.script_src)
 
     @property
     def style_src(self) -> ExprRef:
@@ -122,7 +129,7 @@ class Browser:
 
     @property
     def style_src_elem(self) -> ExprRef:
-        return resolve(style_src_elem, self.default_src)
+        return resolve(style_src_elem, self.style_src)
 
     @property
     def object_src(self) -> ExprRef:
@@ -130,7 +137,7 @@ class Browser:
 
     @property
     def frame_src(self) -> ExprRef:
-        return resolve(frame_src, self.default_src)
+        return resolve(frame_src, self.child_src)
 
     @property
     def child_src(self) -> ExprRef:
@@ -138,7 +145,9 @@ class Browser:
 
     @property
     def worker_src(self) -> ExprRef:
-        return resolve(worker_src, self.default_src)
+        return resolve_chain(
+            worker_src, child_src, script_src, fallback=self.default_src
+        )
 
     def allows_unsafe(self) -> ExprRef:
         return cast(
