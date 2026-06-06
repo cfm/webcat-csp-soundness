@@ -12,7 +12,7 @@ CLI utility to find counterexamples for---
 import argparse
 from z3 import Const, Or, Solver, sat, unsat
 
-from policy import Policy, EffectivePolicy, SerializedSourceList, TOP, WASM_UNSAFE_EVAL
+from policy import Policy, EffectivePolicy, SerializedSource, TOP, WASM_UNSAFE_EVAL
 
 
 def main() -> int:
@@ -30,7 +30,7 @@ def main() -> int:
     p = Policy().valid()
     solver.add(p)
 
-    obj = Const("obj", SerializedSourceList)
+    obj = Const("obj", SerializedSource)
     # FIXME: clarify how to represent safe versus unsafe executions
     solver.add(Or(obj == TOP, obj == WASM_UNSAFE_EVAL))
 

@@ -1,18 +1,37 @@
 from typing import cast
 
-from z3 import And, Const, ExprRef, Or, EnumSort, If
+from z3 import (
+    And,
+    ArrayRef,
+    Const,
+    DatatypeSortRef,
+    ExprRef,
+    Or,
+    EmptySet,
+    EnumSort,
+    If,
+    IsMember,
+    SetAdd,
+    SetSort,
+)
 
 
 # https://www.w3.org/TR/CSP3/#grammardef-serialized-source-list
 # - ⊤: any value not specifically enumerated
 # - ⊥: absent; resolve via fallback
-SerializedSourceList, (NONE, SELF, WASM_UNSAFE_EVAL, TOP, BOT) = EnumSort(
+SerializedSource, (NONE, SELF, WASM_UNSAFE_EVAL, TOP, BOT) = EnumSort(
     "serialized-source-list", ["none", "self", "wasm_unsafe_eval", "⊤", "⊥"]
 )
+SerializedSourceList = SetSort(SerializedSource)
 
 default_src = Const("default-src", SerializedSourceList)
 object_src = Const("object-src", SerializedSourceList)
 script_src = Const("script-src", SerializedSourceList)
+
+
+def only(e: ExprRef, s: DatatypeSortRef) -> ArrayRef:
+    """Return a set of sort `s` containing only the element `e`"""
+    return SetAdd(EmptySet(s), e)
 
 
 class Policy:
@@ -36,9 +55,9 @@ class Policy:
     def default_src_valid(self):
         # https://docs.webcat.tech/developers/CSP.html#default-src
         return Or(
-            self.default_src == BOT,  # absent
-            self.default_src == SELF,
-            self.default_src == NONE,
+            IsMember(BOT, self.default_src),  # absent; FIXME: exclusive
+            IsMember(SELF, self.default_src),
+            IsMember(NONE, self.default_src),
         )
 
     @property
@@ -49,10 +68,10 @@ class Policy:
     def object_src_valid(self):
         # https://docs.webcat.tech/developers/CSP.html#object-src
         return Or(
-            self.object_src == NONE,
+            IsMember(NONE, self.object_src),
             And(
-                self.object_src == BOT,  # absent
-                self.default_src == NONE,
+                IsMember(BOT, self.object_src),  # absent; FIXME: exclusive
+                IsMember(NONE, self.default_src),
             ),
         )
 
@@ -64,10 +83,10 @@ class Policy:
     def script_src_valid(self):
         # https://docs.webcat.tech/developers/CSP.html#script-src-script-src-elem
         return Or(
-            self.script_src == BOT,  # absent
-            self.script_src == NONE,
-            self.script_src == SELF,
-            self.script_src == WASM_UNSAFE_EVAL,
+            IsMember(BOT, self.script_src),  # absent; FIXME: exclusive
+            IsMember(NONE, self.script_src),
+            IsMember(SELF, self.script_src),
+            IsMember(WASM_UNSAFE_EVAL, self.script_src),
         )
 
     def valid(self):
@@ -81,22 +100,39 @@ class Policy:
 class EffectivePolicy(Policy):
     @property
     def default_src(self) -> ExprRef:
-        return cast(ExprRef, If(self._default_src == BOT, TOP, self._default_src))
+        return cast(
+            ExprRef,
+            If(
+                self._default_src == only(BOT, SerializedSource),
+                only(TOP, SerializedSource),
+                self._default_src,
+            ),
+        )
 
     @property
     def object_src(self) -> ExprRef:
         return cast(
-            ExprRef, If(self._object_src == BOT, self.default_src, self._object_src)
+            ExprRef,
+            If(
+                self._object_src == only(BOT, SerializedSource),
+                self.default_src,
+                self._object_src,
+            ),
         )
 
     @property
     def script_src(self) -> ExprRef:
         return cast(
-            ExprRef, If(self._script_src == BOT, self.default_src, self._script_src)
+            ExprRef,
+            If(
+                self._script_src == only(BOT, SerializedSource),
+                self.default_src,
+                self._script_src,
+            ),
         )
 
     def allows(self, obj):
         return Or(
-            self.object_src == obj,
-            self.script_src == obj,
+            IsMember(obj, self.object_src),
+            IsMember(obj, self.script_src),
         )
