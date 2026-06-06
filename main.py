@@ -13,6 +13,7 @@ import argparse
 from z3 import Const, Or, Solver, sat, unsat
 
 from policy import Policy, EffectivePolicy, SerializedSource, TOP, WASM_UNSAFE_EVAL
+from utils import pretty_model
 
 
 def main() -> int:
@@ -48,7 +49,7 @@ def main() -> int:
     elif result == sat:
         model = solver.model()
         print("<-- Violating policy found:")
-        print(model)
+        print(pretty_model(model))
         return 1
 
     else:
