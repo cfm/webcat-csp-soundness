@@ -2,17 +2,17 @@
 """
 CLI utility to find counterexamples for---
 
-    Policy.valid() ⇒ ¬EffectivePolicy.allows(obj)
+    WEBCAT.valid() ⇒ ¬Browser.allows_unsafe()
 
 ---aka examples of:
 
-    Policy.valid() ∧ EffectivePolicy.allows(obj)
+    WEBCAT.valid() ∧ Browser.allows_unsafe()
 """
 
 import argparse
-from z3 import Const, Or, Solver, sat, unsat
+from z3 import Solver, sat, unsat
 
-from policy import Policy, EffectivePolicy, SerializedSource, TOP, WASM_UNSAFE_EVAL
+from policy import Browser, WEBCAT
 from utils import pretty_model
 
 
@@ -28,15 +28,8 @@ def main() -> int:
     args = parser.parse_args()
     solver = Solver()
 
-    p = Policy().valid()
-    solver.add(p)
-
-    obj = Const("obj", SerializedSource)
-    # FIXME: clarify how to represent safe versus unsafe executions
-    solver.add(Or(obj == TOP, obj == WASM_UNSAFE_EVAL))
-
-    ep = EffectivePolicy().allows(obj)
-    solver.add(ep)
+    solver.add(WEBCAT().valid())
+    solver.add(Browser().allows_unsafe())
 
     if args.show_query:
         print(f"--> Query: {solver}")
@@ -44,7 +37,7 @@ def main() -> int:
     result = solver.check()
     if result == unsat:
         print("<-- No violating policies found.")
-        return 0  # Unsat is our goal: Policy.valid() is sound!
+        return 0  # Unsat is our goal: WEBCAT.valid() is sound!
 
     elif result == sat:
         model = solver.model()

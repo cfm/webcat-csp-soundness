@@ -3,13 +3,16 @@ from z3 import (
     BoolSort,
     DatatypeSortRef,
     IsMember,
+    is_app,
     is_expr,
     is_true,
 )
 
 
 def pretty_model(model) -> str:
-    lines = [f"{d.name()} = {format_value(model, model[d])}" for d in model.decls()]
+    # Only the constants (arity 0); skip Z3's internal accessor/array helpers.
+    decls = [d for d in model.decls() if d.arity() == 0]
+    lines = [f"{d.name()} = {format_value(model, model[d])}" for d in decls]
     return "[" + ",\n ".join(lines) + "]"
 
 
@@ -37,4 +40,14 @@ def format_value(model, value) -> str:
             )
         ]
         return "{" + ", ".join(members) + "}"
+    # An algebraic datatype value, e.g. `absent` or `present({...})`: show the
+    # constructor name and recursively format its arguments (sets included).
+    if isinstance(sort, DatatypeSortRef) and is_app(value):
+        name = value.decl().name()
+        if value.num_args() == 0:
+            return name
+        args = ", ".join(
+            format_value(model, value.arg(i)) for i in range(value.num_args())
+        )
+        return f"{name}({args})"
     return str(value)
