@@ -24,8 +24,10 @@ from z3 import (
 Source, (NONE, SELF, WASM_UNSAFE_EVAL, TOP) = EnumSort(
     "source", ["none", "self", "wasm_unsafe_eval", "⊤"]
 )
-Sources = SetSort(Source)
+UNVERIFIED_SOURCES = (TOP, WASM_UNSAFE_EVAL)
+REAL_SOURCES = (SELF, WASM_UNSAFE_EVAL, TOP)  # `Source / {NONE}`; see `is_none()`
 
+Sources = SetSort(Source)
 Directive = Datatype("directive")
 Directive.declare("absent")
 Directive.declare("present", ("sources", Sources))
@@ -65,11 +67,10 @@ def permits(permission: ExprRef, source: ExprRef) -> ExprRef:
     return IsMember(source, permission)
 
 
-UNVERIFIED = (TOP, WASM_UNSAFE_EVAL)
-
-
 def permits_unverified(permission: ExprRef) -> ExprRef:
-    return cast(ExprRef, Or(*(permits(permission, source) for source in UNVERIFIED)))
+    return cast(
+        ExprRef, Or(*(permits(permission, source) for source in UNVERIFIED_SOURCES))
+    )
 
 
 def normalize(sources: ArrayRef) -> ArrayRef:
@@ -85,11 +86,16 @@ def restricted_to(directive: ExprRef, *allowed: ExprRef) -> ExprRef:
 
 
 def is_none(directive: ExprRef) -> ExprRef:
+    """
+    Checking `normalize() == ∅` can cause the query to return unknown.  It's
+    equivalent and faster to check for membership in `REAL_SOURCES` as defined
+    above.
+    """
     return cast(
         ExprRef,
         And(
             Directive.is_present(directive),  # pyright: ignore[reportAttributeAccessIssue]
-            normalize(srcs(directive)) == EmptySet(Source),
+            *(Not(permits(srcs(directive), source)) for source in REAL_SOURCES),
         ),
     )
 
