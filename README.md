@@ -1,14 +1,18 @@
 # `webcat-csp-soundness`
 
-CLI utility to find counterexamples for—
+CLI utility to find counterexamples for---
 
-    Policy.valid() ⇒ ¬EffectivePolicy.allows(obj)
+    WEBCAT.valid() ⇒ ¬Browser.loads_unverified()
 
-—aka examples of:
+---aka examples of---
 
-    Policy.valid() ∧ EffectivePolicy.allows(obj)
+    WEBCAT.valid() ∧ Browser.loads_unverified()
 
-## Counterexample CLI
+---i.e., a CSP that WEBCAT accepts as conformant whose real (browser)
+interpretation still permits loading an asset that wasn't registered in the
+site's manifest.
+
+## CLI
 
 Install dependencies:
 

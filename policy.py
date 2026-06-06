@@ -31,6 +31,8 @@ Directive.declare("absent")
 Directive.declare("present", ("sources", Sources))
 Directive = Directive.create()
 
+# NB. Here and below, CSP directives are listed in the order in which WEBCAT
+# documents them (https://docs.webcat.tech/developers/CSP.html).
 default_src = Const("default-src", Directive)
 script_src = Const("script-src", Directive)
 script_src_elem = Const("script-src-elem", Directive)
@@ -63,11 +65,11 @@ def permits(permission: ExprRef, source: ExprRef) -> ExprRef:
     return IsMember(source, permission)
 
 
-def unsafe(permission: ExprRef) -> ExprRef:
-    # FIXME: clarify how to represent safe versus unsafe executions
-    return cast(
-        ExprRef, Or(permits(permission, TOP), permits(permission, WASM_UNSAFE_EVAL))
-    )
+UNVERIFIED = (TOP, WASM_UNSAFE_EVAL)
+
+
+def permits_unverified(permission: ExprRef) -> ExprRef:
+    return cast(ExprRef, Or(*(permits(permission, source) for source in UNVERIFIED)))
 
 
 def normalize(sources: ArrayRef) -> ArrayRef:
@@ -143,18 +145,18 @@ class Browser:
     def worker_src(self) -> ExprRef:
         return resolve(worker_src, child_src, script_src, fallback=self.default_src)
 
-    def allows_unsafe(self) -> ExprRef:
+    def loads_unverified(self) -> ExprRef:
         return cast(
             ExprRef,
             Or(
-                unsafe(self.script_src),
-                unsafe(self.script_src_elem),
-                unsafe(self.style_src),
-                unsafe(self.style_src_elem),
-                unsafe(self.object_src),
-                unsafe(self.frame_src),
-                unsafe(self.child_src),
-                unsafe(self.worker_src),
+                permits_unverified(self.script_src),
+                permits_unverified(self.script_src_elem),
+                permits_unverified(self.style_src),
+                permits_unverified(self.style_src_elem),
+                permits_unverified(self.object_src),
+                permits_unverified(self.frame_src),
+                permits_unverified(self.child_src),
+                permits_unverified(self.worker_src),
             ),
         )
 

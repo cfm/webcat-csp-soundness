@@ -2,11 +2,15 @@
 """
 CLI utility to find counterexamples for---
 
-    WEBCAT.valid() ⇒ ¬Browser.allows_unsafe()
+    WEBCAT.valid() ⇒ ¬Browser.loads_unverified()
 
----aka examples of:
+---aka examples of---
 
-    WEBCAT.valid() ∧ Browser.allows_unsafe()
+    WEBCAT.valid() ∧ Browser.loads_unverified()
+
+---i.e., a CSP that WEBCAT accepts as conformant whose real (browser)
+interpretation still permits loading an asset that wasn't registered in the
+site's manifest.
 """
 
 import argparse
@@ -18,7 +22,7 @@ from utils import pretty_model
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Find CSPs valid under WEBCAT that allow unsafe code execution."
+        description="Find CSPs valid under WEBCAT that load unverified assets."
     )
     parser.add_argument(
         "--show-query",
@@ -29,7 +33,7 @@ def main() -> int:
     solver = Solver()
 
     solver.add(WEBCAT().valid())
-    solver.add(Browser().allows_unsafe())
+    solver.add(Browser().loads_unverified())
 
     if args.show_query:
         print(f"--> Query: {solver}")
