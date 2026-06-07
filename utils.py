@@ -32,6 +32,21 @@ def pretty_effective(model, directives) -> str:
     return "[" + ",\n ".join(lines) + "]"
 
 
+def set_members(model, value) -> list[str]:
+    """Names of the enum members present in a Z3 set value (Array(enum, Bool))."""
+    domain = value.sort().domain()
+    return [
+        domain.constructor(i).name()
+        for i in range(domain.num_constructors())
+        if is_true(
+            model.eval(
+                IsMember(domain.constructor(i)(), value),
+                model_completion=True,
+            )
+        )
+    ]
+
+
 def format_value(model, value) -> str:
     """Render a model value, collapsing sets to just their members."""
     if not is_expr(value):
@@ -44,18 +59,7 @@ def format_value(model, value) -> str:
         and sort.range() == BoolSort(sort.ctx)
         and isinstance(sort.domain(), DatatypeSortRef)
     ):
-        domain = sort.domain()
-        members = [
-            str(domain.constructor(i)())
-            for i in range(domain.num_constructors())
-            if is_true(
-                model.eval(
-                    IsMember(domain.constructor(i)(), value),
-                    model_completion=True,
-                )
-            )
-        ]
-        return "{" + ", ".join(members) + "}"
+        return "{" + ", ".join(set_members(model, value)) + "}"
     # An algebraic datatype value, e.g. `absent` or `present({...})`: show the
     # constructor name and recursively format its arguments (sets included).
     if isinstance(sort, DatatypeSortRef) and is_app(value):
@@ -67,3 +71,22 @@ def format_value(model, value) -> str:
         )
         return f"{name}({args})"
     return str(value)
+
+
+def _csp_token(source: str) -> str:
+    # `⊤` models "any source not enumerated"; render it as the CSP wildcard.
+    return "*" if source == "⊤" else f"'{source.replace('_', '-')}'"
+
+
+def csp_header(model, directives) -> str:
+    """Render a model's *present* directives as a `Content-Security-Policy`
+    header value. Absent directives are omitted, as they would be in a real
+    header. `directives` is a sequence of directive constants, in header order."""
+    parts = []
+    for directive in directives:
+        value = model.eval(directive, model_completion=True)
+        if value.decl().name() == "absent":
+            continue
+        tokens = [_csp_token(source) for source in set_members(model, value.arg(0))]
+        parts.append(" ".join([directive.decl().name(), *tokens]))
+    return "Content-Security-Policy: " + "; ".join(parts)

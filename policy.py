@@ -11,7 +11,6 @@ from z3 import (
     If,
     Implies,
     IsMember,
-    IsSubset,
     Not,
     Or,
     SetAdd,
@@ -44,6 +43,18 @@ object_src = Const("object-src", Directive)
 frame_src = Const("frame-src", Directive)
 child_src = Const("child-src", Directive)
 worker_src = Const("worker-src", Directive)
+
+DIRECTIVES = (
+    default_src,
+    script_src,
+    script_src_elem,
+    style_src,
+    style_src_elem,
+    object_src,
+    frame_src,
+    child_src,
+    worker_src,
+)
 
 
 def only(e: ExprRef, s: DatatypeSortRef) -> ArrayRef:
@@ -80,10 +91,16 @@ def normalize(sources: ArrayRef) -> ArrayRef:
 
 
 def restricted_to(directive: ExprRef, *allowed: ExprRef) -> ExprRef:
-    permitted = EmptySet(Source)
-    for source in allowed:
-        permitted = SetAdd(permitted, source)
-    return cast(ExprRef, IsSubset(srcs(directive), permitted))
+    """
+    Check that the directive's sources lie within its `allowed` list: that is,
+    it allows none of the *other* sources.  This expression rather than
+    `IsSubset()` let us query `model.eval()` for a literal.
+    """
+    disallowed = (s for s in ALL_SOURCES if not any(s is a for a in allowed))
+    return cast(
+        ExprRef,
+        And(*(Not(permits(srcs(directive), source)) for source in disallowed)),
+    )
 
 
 def is_none(directive: ExprRef) -> ExprRef:
