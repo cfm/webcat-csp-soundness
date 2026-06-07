@@ -16,6 +16,22 @@ def pretty_model(model) -> str:
     return "[" + ",\n ".join(lines) + "]"
 
 
+def pretty_effective(model, directives) -> str:
+    """Render selected directives' *effective* (post-fallback) values, e.g.
+
+        [script-src = present({⊤}),
+         style-src = present({⊤})]
+
+    `directives` maps each display name to its effective `Sources` expression
+    (typically a `Browser` property). A resolved directive is never absent — an
+    omitted one inherits its fallback — so each value is shown as `present(…)`."""
+    lines = []
+    for name, expression in directives.items():
+        sources = format_value(model, model.eval(expression, model_completion=True))
+        lines.append(f"{name} = present({sources})")
+    return "[" + ",\n ".join(lines) + "]"
+
+
 def format_value(model, value) -> str:
     """Render a model value, collapsing sets to just their members."""
     if not is_expr(value):
