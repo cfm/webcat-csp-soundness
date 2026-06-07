@@ -18,6 +18,23 @@ manifest.
 [csp]: https://www.w3.org/TR/CSP3/
 [webcat-csp]: https://docs.webcat.tech/developers/CSP.html
 
+
+## Running
+
+Preferably in a virtual environment:
+
+```bash
+pip3 install -r requirements.txt
+python3 main.py
+```
+
+This command will yield *some* witness.  If you'd like to reproduce exactly the
+witness described below, run the tests:
+
+```bash
+python3 -m doctest -v main.py
+```
+
 ## Satisfiability
 
     >>> from z3 import Solver, sat
