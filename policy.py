@@ -74,7 +74,8 @@ def permits_unverified(permission: ExprRef) -> ExprRef:
 
 
 def normalize(sources: ArrayRef) -> ArrayRef:
-    # FIXME: webcat#99
+    # Per freedomofpress/webcat#99 only {NONE} means none; {NONE, SELF} means
+    # SELF.
     return SetDel(sources, NONE)
 
 
@@ -149,6 +150,10 @@ class Browser:
 
     @property
     def worker_src(self) -> ExprRef:
+        # "If this directive is absent, the user agent will first look for the
+        # `child-src`` directive, then the `script-src` directive, then finally for
+        # the `default-src` directive, when governing worker execution."
+        # (https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/worker-src)
         return resolve(worker_src, child_src, script_src, fallback=self.default_src)
 
     def loads_unverified(self) -> ExprRef:

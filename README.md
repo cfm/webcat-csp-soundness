@@ -10,9 +10,13 @@ CLI utility to find counterexamples for—
 
     WEBCAT.valid() ∧ Browser.loads_unverified()
 
-—i.e., a CSP that WEBCAT accepts as conformant whose real (browser)
-interpretation still permits loading an asset that wasn't registered in the
-site's manifest.
+—i.e., a CSP that WEBCAT's [specification][webcat-csp] accepts as conformant
+whose real (browser) interpretation according to [Content Security Policy Level
+3][csp] still permits loading an asset that wasn't registered in the site's
+manifest.
+
+[csp]: https://www.w3.org/TR/CSP3/
+[webcat-csp]: https://docs.webcat.tech/developers/CSP.html
 
 ## Satisfiability
 
