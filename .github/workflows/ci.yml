@@ -18,6 +18,11 @@ jobs:
         run: |
           make lint
           git diff --exit-code
+      - name: Check readme
+        run: |
+          touch main.py
+          make README.md
+          git diff --exit-code
 
   test:
     runs-on: ubuntu-latest

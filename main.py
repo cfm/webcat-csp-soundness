@@ -2,15 +2,15 @@
 """
 # `webcat-csp-soundness`
 
-CLI utility to find counterexamples for---
+CLI utility to find counterexamples for—
 
     WEBCAT.valid() ⇒ ¬Browser.loads_unverified()
 
----aka witnesses of---
+—aka witnesses of—
 
     WEBCAT.valid() ∧ Browser.loads_unverified()
 
----i.e., a CSP that WEBCAT accepts as conformant whose real (browser)
+—i.e., a CSP that WEBCAT accepts as conformant whose real (browser)
 interpretation still permits loading an asset that wasn't registered in the
 site's manifest.
 
