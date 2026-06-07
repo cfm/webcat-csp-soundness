@@ -21,11 +21,11 @@ from z3 import (
 
 
 # https://www.w3.org/TR/CSP3/#grammardef-serialized-source-list
-Source, (NONE, SELF, WASM_UNSAFE_EVAL, TOP) = EnumSort(
-    "source", ["none", "self", "wasm_unsafe_eval", "⊤"]
-)
+Source, ALL_SOURCES = EnumSort("source", ["none", "self", "wasm_unsafe_eval", "⊤"])
+NONE, SELF, WASM_UNSAFE_EVAL, TOP = ALL_SOURCES
+
 UNVERIFIED_SOURCES = (TOP, WASM_UNSAFE_EVAL)
-REAL_SOURCES = (SELF, WASM_UNSAFE_EVAL, TOP)  # `Source / {NONE}`; see `is_none()`
+REAL_SOURCES = tuple(source for source in ALL_SOURCES if source is not NONE)
 
 Sources = SetSort(Source)
 Directive = Datatype("directive")
