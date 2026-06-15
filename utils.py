@@ -1,3 +1,9 @@
+"""
+These are utility functions that I asked Claude to generate and (in contrast to
+the rest of this project) have *not* inspected or tested carefully.  Consider
+them development and debugging aids, and take them with a grain of salt.
+"""
+
 from z3 import (
     ArraySortRef,
     BoolSort,

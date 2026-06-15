@@ -2,6 +2,11 @@
 
 # `webcat-csp-soundness`
 
+> [!NOTE]
+> This tool was a project for ["Computer-Aided Reasoning for Software"][cars] at
+> the University of Washington in spring 2026.  It remains a prototype and has
+> not yet been validated for real-world use.
+
 CLI utility to find differential counterexamples for—
 
     WEBCAT.valid() ⇒ ¬Browser.loads_unverified()
@@ -15,6 +20,7 @@ whose real (browser) interpretation according to [Content Security Policy Level
 3][csp] still permits loading an asset that wasn't registered in the site's
 manifest.
 
+[cars]: https://courses.cs.washington.edu/courses/csep590b/26sp/
 [csp]: https://www.w3.org/TR/CSP3/
 [webcat-csp]: https://docs.webcat.tech/developers/CSP.html
 
